@@ -24,7 +24,7 @@ class ProductViews(APIView):
             }, status=400)
         
         for data in payload:
-            keys = ["prodname", "desc","img","price"]
+            keys = ["prodname", "desc","file","price"]
             valid_res = validate_payload_credentials(data, keys)
             if valid_res['creds'] is None:
                 res = {
@@ -32,10 +32,9 @@ class ProductViews(APIView):
                 }
                 return Response(res, status=400)
             creds = valid_res["creds"]
-
             
             try:
-                e = creds['img']
+                e = creds['file']
                 fmt, docu = e.split(";base64,")
                 ext = fmt.split("/")[-1]
                 decoded_data = base64.b64decode(docu)
@@ -46,12 +45,6 @@ class ProductViews(APIView):
                     "message": "failed to decode image file",
                     "details": str(e)
                 }, status=400)
-        
-        # prodname = request.data.get("prodname")
-        # desc = request.data.get("desc")
-        # img = request.data.get("img")
-        # price = request.data.get("price")
-        # status = request.data.get("status")
 
             try:
                 new_data = {
@@ -79,16 +72,13 @@ class ProductViews(APIView):
                 results.append(res)
 
             try:
-                file = {
-                    "img": binary_data
-                }
+                file = {"img": binary_data}
                 Image.objects.create(**file)
                 res = {
                     "status": 201,
                     "message": "Image added successfully"
                 }
                 results.append(res)
-
                 return Response(result_covert_simple(res))
             except Exception as e:
                 res = {
@@ -106,6 +96,13 @@ class ProductViews(APIView):
             "message": "product added",
             "details": results
         }, status=200)
+    
+class UpdateProduct(APIView):
+    def post(self, request):
+        ...
+
+class DeleteProduct(APIView):
+    ...
         
 
 class UpdateStatus(APIView):
