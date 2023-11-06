@@ -99,10 +99,70 @@ class ProductViews(APIView):
     
 class UpdateProduct(APIView):
     def post(self, request):
-        ...
+        results = []
+        payload = request.data
+        if not isinstance(payload, list) or not all(isinstance(item,dict) for item in payload):
+            return Response({
+                "error": "Invalid payload format. Expecting a list of dictionaries"
+            }, status=400)
+        
+        for data in payload:
+            keys = ["prodname", "desc","file","price"]
+            valid_res = validate_payload_credentials(data, keys)
+            if valid_res['creds'] is None:
+                res = {
+                    "missing": valid_res['missing_fields']
+                }
+                return Response(res, status=400)
+            creds = valid_res["creds"]
+
+            
+            
+            try:
+                new_data = {
+                    "prodname": data['prodname'],
+                    "desc": data['desc'],
+                    "price": data['price']
+                }
+            except:
+                ...
+
 
 class DeleteProduct(APIView):
-    ...
+    def delete(self, request):
+        payload = request.data
+        results = []
+        deleted = []
+
+        if 'productid' not in payload:
+            val = payload['productid']
+            field = 'productid__exact'
+            return Response({
+                "message": "look up field 'productid' not provided"
+            }, status=400)  
+              
+        for v in val:
+            try:
+                prod = Product.objects.get(**{field: v})
+                prod.delete()
+                deleted.append(prod.productid)
+                res = {
+                    "status": 200,
+                    "details": f"{prod.prodname.title()} has been removed"
+                }
+                results.append(res)
+            except Exception as e:
+                res = {
+                    "status": 400,
+                    "details": str(e)
+                }
+                results.append(res)
+
+        if all(r['status']!=200 for r in results):
+            return Response(results, status=400)
+        results['deleted'] = deleted
+        return Response(results, status=200)
+          
         
 
 class UpdateStatus(APIView):

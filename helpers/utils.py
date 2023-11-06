@@ -46,3 +46,24 @@ def result_covert_simple(data_master):
     }
     return data
     
+def update_data(model: ModelType, lookup: str, lookup_value: str, data: dict):
+    """
+    dynamicaly update passed model data.
+    input:
+        model: ModelType, django orm class
+        lookup: str, lookup field
+        lookup_value: str, what to look in lookup
+        data: dict, new data to be inputed
+    """
+    lookup_field = f"{lookup}__exact"
+    query = {lookup_field : lookup_value, "endda__gt" : today}
+    if not model.objects.filter(**query).exists():
+        raise ValueError("data not found")
+
+    try:
+        new_data = model.objects.get(**query)
+        for k,v in data.items():
+            setattr(new_data, k, v)
+        new_data.save()
+    except Exception as e:
+        raise ValueError(f"Error: {str(e)}") from e
