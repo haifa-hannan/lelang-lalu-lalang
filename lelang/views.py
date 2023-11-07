@@ -97,37 +97,74 @@ class ProductViews(APIView):
             "details": results
         }, status=200)
     
-class UpdateProduct(APIView):
-    def post(self, request):
-        results = []
-        payload = request.data
-        if not isinstance(payload, list) or not all(isinstance(item,dict) for item in payload):
-            return Response({
-                "error": "Invalid payload format. Expecting a list of dictionaries"
-            }, status=400)
+# class UpdateProduct(APIView):
+#     def post(self, request):
+#         results = []
+#         payload = request.data
+#         keys = ["prodname", "desc","price"]
+
+#         # lookup_field = f"{'productid'}__exact"
+#         # query = {lookup_field : creds['productid']}
+#         # if not Product.objects.filter(**query).exists():
+#         #     raise ValueError("product not found")
         
-        for data in payload:
-            keys = ["prodname", "desc","file","price"]
-            valid_res = validate_payload_credentials(data, keys)
-            if valid_res['creds'] is None:
-                res = {
-                    "missing": valid_res['missing_fields']
-                }
-                return Response(res, status=400)
-            creds = valid_res["creds"]
-
+#         for data in payload:
+#             valid_res = validate_credentials(data, keys)
+#             if valid_res['creds'] is None:
+#                 res = {
+#                     "missing": valid_res['missing_fields']
+#                 }
+#                 return Response(res, status=400)
+#             creds = valid_res["creds"]
             
+#             try:
+#                 new_data = {
+#                     "prodname": data['prodname'],
+#                     "desc": data['desc'],
+#                     "price": data['price']
+#                 }
+#                 nd = Product.objects.get(productid=creds['productid'])
+#                 for k,v in new_data.items():
+#                     setattr(nd, k, v)
+#                     nd.save()
+#                 return Response({
+#                     "message": "Product updated successfully",
+#                     "details": f"{creds['productid']} has been updated"
+#                 })
+
+#             except Exception as e:
+#                 return Response({
+#                     "message":"Product update failed",
+#                     "details": [{
+#                         "raw_error": str(e),
+#                     }]
+#                 }, status=400)
             
-            try:
-                new_data = {
-                    "prodname": data['prodname'],
-                    "desc": data['desc'],
-                    "price": data['price']
-                }
-            except:
-                ...
+class UpdateProduct2(APIView):
+    def post(self, request):
+        keys = ["prodname", "desc","price"]
+        vlk = validate_credentials(request, keys)
+        if vlk['creds'] is None:
+            res = {
+                "message": vlk['missing_fields']
+            }
+            return Response(res, status=400)
+        data = vlk["creds"]
 
-
+        try:
+            prod  = Product.objects.get(productid=data["productid"])
+            for k,v in data.items():
+                setattr(prod, k, v)
+            prod.save()
+            return Response({
+                "message": "Product edited successfully",
+                "details": f"{data['productid']} has been updated"
+            })
+        except Exception as e:
+            return Response({
+                "message": "something went wrong",
+                "details": str(e)
+            }, status=400)
 class DeleteProduct(APIView):
     def delete(self, request):
         keys = ['productid']
@@ -162,9 +199,7 @@ class DeleteProduct(APIView):
         if all(r['status']!=200 for r in results):
             return Response(results, status=400)
         # results['deleted'] = deleted
-        return Response(results, status=200)
-          
-        
+        return Response(results, status=200)                
 
 class UpdateStatus(APIView):
     def post(self,request):
