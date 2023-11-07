@@ -15,18 +15,18 @@ class Product(models.Model):
         managed = True
         db_table = 'product'
 
-    def soft_delete(self, deleted_by = None):
-        self.chgby = deleted_by
-        self.endda = yesterday
-        self.save()
+    # def soft_delete(self, deleted_by = None):
+    #     self.chgby = deleted_by
+    #     # self.endda = yesterday
+    #     self.save()
 
-    def undelete(self, restored_by = None):
-        self.endda = "2999-01-01"
-        self.chgby = restored_by
-        self.save()
+    # def undelete(self, restored_by = None):
+    #     self.endda = "2999-01-01"
+    #     self.chgby = restored_by
+    #     self.save()
 
-    def delete(self, using=None, keep_parents=False, deleted_by = None):
-        self.soft_delete(deleted_by=deleted_by)
+    # def delete(self, using=None, keep_parents=False, deleted_by = None):
+    #     self.soft_delete(deleted_by=deleted_by)
         
 class Image(models.Model):
     imgid = models.UUIDField(primary_key=True, default=uuid.uuid4)

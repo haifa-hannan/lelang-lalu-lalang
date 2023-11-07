@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from .serializers import *
 from .models import Product
-from helpers.utils import insert_data, validate_payload_credentials, result_covert_simple
+from helpers.utils import insert_data, validate_payload_credentials, result_covert_simple, validate_credentials
 from django.core.files.base import ContentFile
 
 import base64
@@ -130,37 +130,38 @@ class UpdateProduct(APIView):
 
 class DeleteProduct(APIView):
     def delete(self, request):
-        payload = request.data
+        keys = ['productid']
         results = []
         deleted = []
+        valid_res = validate_credentials(request, keys)
+        if valid_res['creds'] is None:
+            res = {
+                "missing": valid_res['missing_fields']
+            }
+            return Response(res, status=400)
+        creds = valid_res["creds"]  
 
-        if 'productid' not in payload:
-            val = payload['productid']
-            field = 'productid__exact'
-            return Response({
-                "message": "look up field 'productid' not provided"
-            }, status=400)  
-              
-        for v in val:
-            try:
-                prod = Product.objects.get(**{field: v})
+        try:
+            # for v in creds['productid']:
+            for v in creds.get('productid', []):
+                prod = Product.objects.get(productid__exact=v)
                 prod.delete()
-                deleted.append(prod.productid)
-                res = {
-                    "status": 200,
-                    "details": f"{prod.prodname.title()} has been removed"
-                }
-                results.append(res)
-            except Exception as e:
-                res = {
-                    "status": 400,
-                    "details": str(e)
-                }
-                results.append(res)
+                deleted.append(v)
+            res = {
+                "status": 200,
+                "details": f"{prod.prodname} has been removed"
+            }
+            results.append(res)
+        except Exception as e:
+            res = {
+                "status": 400,
+                "details": str(e)
+            }
+            results.append(res)
 
         if all(r['status']!=200 for r in results):
             return Response(results, status=400)
-        results['deleted'] = deleted
+        # results['deleted'] = deleted
         return Response(results, status=200)
           
         

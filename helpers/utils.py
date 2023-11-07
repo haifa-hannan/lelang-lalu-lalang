@@ -1,5 +1,8 @@
 from typing import Type
 from django.db import models
+from django.http import HttpRequest
+from typing import List
+import json 
 
 ModelType = Type[models.Model]
 
@@ -67,3 +70,25 @@ def update_data(model: ModelType, lookup: str, lookup_value: str, data: dict):
         new_data.save()
     except Exception as e:
         raise ValueError(f"Error: {str(e)}") from e
+    
+def validate_credentials(request: HttpRequest, required_keys: List[str]):
+    """
+    check to see if payload is complete
+    input:
+        request: http request
+        required_keys: list of strings, required JSON keys
+    """
+    try:
+        creds = json.loads(request.body.decode("utf-8"))
+    except Exception:
+        return {"creds": None, "missing_fields": ["Invalid JSON format"]}
+
+    if not creds:
+        return {"creds": None, "missing_fields": ["No credentials received"]}
+
+    if missing_fields := [
+        key for key in required_keys if key not in creds or not creds[key]
+    ]:
+        return {"creds": None, "missing_fields": missing_fields}
+
+    return {"creds": creds, "missing_fields": []}
