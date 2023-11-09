@@ -6,6 +6,8 @@ from .serializers import *
 from .models import Product
 from helpers.utils import insert_data, validate_payload_credentials, result_covert_simple, validate_credentials
 from django.core.files.base import ContentFile
+from django import forms
+from decimal import Decimal
 
 import base64
 
@@ -204,7 +206,7 @@ class DeleteProduct(APIView):
 class UpdateStatus(APIView):
     def post(self,request):
         keys = ['productid','statusid']
-        valid_res = validate_payload_credentials(request, keys)
+        valid_res = validate_credentials(request, keys)
         if valid_res['creds'] is None:
             res = {
                 "missing": valid_res['missing_fields']
@@ -213,12 +215,43 @@ class UpdateStatus(APIView):
         data = valid_res["creds"]
 
         try:
-            stat = Status.objects.get(stat=data['status'])
-            prodid = Product.objects.get(prodid=data['productid'])
-            prodid.status = stat.status
+            stat = Status.objects.get(statusid=data['statusid'])
+            prodid = Product.objects.get(productid=data['productid'])
+            prodid.statusid = stat.statusid
             prodid.save()
             return Response({"message": "status updated successfully"})
         except Product.DoesNotExist:
             return Response({"message": "Product not found"}, status=404)
         except Exception as e:
             return Response({"message": f"An error occurred: {str(e)}"}, status=500)
+        
+class Transaction(APIView):
+    def post(self, request):
+        keys = ["productid","lastprice","statusid"]
+        vld = validate_credentials(request, keys)
+        if vld['creds'] is None:
+            res = {
+                "missing": vld['msissing_fields']
+            }
+            return Response(res, status=400)
+        data = vld["creds"]
+
+        bidamount = Decimal(data['lastprice'])
+        product = Product.objects.get(productid=data['productid'])
+
+        try:
+            if bidamount >= product.price:
+                transaction = Transaction(product=product, lastprice=bidamount)
+                transaction.save()
+
+                product.price = bidamount
+                product.save()
+
+                return Response('productid', productid=['productid'])
+            else:
+                return Response({"message":"bid must be higher than current price"})
+        except Exception as e:
+            return Response({
+                "message": "something went wrong",
+                "details": str(e)
+            }, status=400)
