@@ -48,7 +48,7 @@ class Status(models.Model):
 class Transaction(models.Model):
     transactionid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     productid = models.ForeignKey('product', on_delete=models.CASCADE, blank=True, null=True)
-    lelangdate = models.DateTimeField(blank=True, null=True, default=timezone.now())
+    lelangdate = models.DateTimeField(blank=True, null=True, default=timezone.now)
     lastprice = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
     staffid = models.CharField(max_length=150, blank=True, null=True)
     userid = models.CharField(max_length=150, blank=True, null=True)

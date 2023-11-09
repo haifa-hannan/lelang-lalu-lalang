@@ -3,7 +3,7 @@ from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .serializers import *
-from .models import Product
+from .models import *
 from helpers.utils import insert_data, validate_payload_credentials, result_covert_simple, validate_credentials
 from django.core.files.base import ContentFile
 from django import forms
@@ -225,7 +225,7 @@ class UpdateStatus(APIView):
         except Exception as e:
             return Response({"message": f"An error occurred: {str(e)}"}, status=500)
         
-class Transaction(APIView):
+class TransactionViews(APIView):
     def post(self, request):
         keys = ["productid","lastprice","statusid"]
         vld = validate_credentials(request, keys)
@@ -240,14 +240,19 @@ class Transaction(APIView):
         product = Product.objects.get(productid=data['productid'])
 
         try:
-            if bidamount >= product.price:
-                transaction = Transaction(product=product, lastprice=bidamount)
-                transaction.save()
+            if bidamount > product.price:
+                transact = Transaction(productid=product, lastprice=bidamount)
+                # transact.lastprice = bidamount
+                transact.save()
 
                 product.price = bidamount
                 product.save()
 
-                return Response('productid', productid=['productid'])
+                return Response({"product details": {
+                    "productid": product.productid,
+                    "name": product.prodname,
+                    "price": product.price
+                }})
             else:
                 return Response({"message":"bid must be higher than current price"})
         except Exception as e:
@@ -255,3 +260,7 @@ class Transaction(APIView):
                 "message": "something went wrong",
                 "details": str(e)
             }, status=400)
+        
+class GetTransaction(generics.ListAPIView):
+    queryset = Transaction.objects.all()
+    serializer_class = TransactionSerializer

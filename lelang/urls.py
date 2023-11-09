@@ -8,5 +8,6 @@ urlpatterns = [
     # path("upd-products/", views.UpdateProduct.as_view(), name="upd-product"),
     path("upd2-products/", views.UpdateProduct2.as_view(), name="upd2-product"),
     path("up-status/", views.UpdateStatus.as_view(), name="up-status"),
-    path("transactions/", views.Transaction.as_view(), name="transactions"),
+    path("transactions/", views.TransactionViews.as_view(), name="transactions"),
+    path("get-transactions/", views.GetTransaction.as_view(), name="get-transactions"),
 ]
