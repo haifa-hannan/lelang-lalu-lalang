@@ -98,49 +98,6 @@ class ProductViews(APIView):
             "message": "product added",
             "details": results
         }, status=200)
-    
-# class UpdateProduct(APIView):
-#     def post(self, request):
-#         results = []
-#         payload = request.data
-#         keys = ["prodname", "desc","price"]
-
-#         # lookup_field = f"{'productid'}__exact"
-#         # query = {lookup_field : creds['productid']}
-#         # if not Product.objects.filter(**query).exists():
-#         #     raise ValueError("product not found")
-        
-#         for data in payload:
-#             valid_res = validate_credentials(data, keys)
-#             if valid_res['creds'] is None:
-#                 res = {
-#                     "missing": valid_res['missing_fields']
-#                 }
-#                 return Response(res, status=400)
-#             creds = valid_res["creds"]
-            
-#             try:
-#                 new_data = {
-#                     "prodname": data['prodname'],
-#                     "desc": data['desc'],
-#                     "price": data['price']
-#                 }
-#                 nd = Product.objects.get(productid=creds['productid'])
-#                 for k,v in new_data.items():
-#                     setattr(nd, k, v)
-#                     nd.save()
-#                 return Response({
-#                     "message": "Product updated successfully",
-#                     "details": f"{creds['productid']} has been updated"
-#                 })
-
-#             except Exception as e:
-#                 return Response({
-#                     "message":"Product update failed",
-#                     "details": [{
-#                         "raw_error": str(e),
-#                     }]
-#                 }, status=400)
             
 class UpdateProduct2(APIView):
     def post(self, request):
@@ -238,23 +195,35 @@ class TransactionViews(APIView):
 
         bidamount = Decimal(data['lastprice'])
         product = Product.objects.get(productid=data['productid'])
+        is_staff = request.user.is_staff
 
         try:
-            if bidamount > product.price:
-                transact = Transaction(productid=product, lastprice=bidamount)
-                # transact.lastprice = bidamount
-                transact.save()
+            if not is_staff:
+                if bidamount > product.price:
+                    transact = Transaction(productid=product, lastprice=bidamount)
+                    # transact.lastprice = bidamount
+                    transact.save()
 
-                product.price = bidamount
+                    product.price = bidamount
+                    product.save()
+
+                    return Response({"product details": {
+                        "productid": product.productid,
+                        "name": product.prodname,
+                        "price": product.price
+                    }})
+                else:
+                    return Response({"message":"bid must be higher than current price"})
+            elif is_staff:
+                product.statusid = data['statusid']
                 product.save()
 
                 return Response({"product details": {
                     "productid": product.productid,
                     "name": product.prodname,
-                    "price": product.price
+                    "status": product.statusid
                 }})
-            else:
-                return Response({"message":"bid must be higher than current price"})
+
         except Exception as e:
             return Response({
                 "message": "something went wrong",
@@ -264,3 +233,6 @@ class TransactionViews(APIView):
 class GetTransaction(generics.ListAPIView):
     queryset = Transaction.objects.all()
     serializer_class = TransactionSerializer
+
+class TransactionStaff(APIView):
+    ...
